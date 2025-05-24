@@ -1,4 +1,4 @@
-name: 12-sync-dining
+name: 12-sync-frontiers
 
 # This workflow checks if all required checks have passed before allowing a pull request to be merged.
 # It is triggered on pull request events and uses the GitHub CLI to check the status of checks.
@@ -10,14 +10,15 @@ on:
   workflow_dispatch:
   push:
     branches: [ main]
-    paths: [.github/workflows/12-sync-dining.yml]
+    paths: [.github/workflows/12-sync-frontiers.yml]
   schedule:
     - cron: '0 12 * * *' 
 
 env:
-  APP: dining
-  REPO: https://github.com/ucsb-cs156-s25/proj-dining-s25-12
+  APP: frontiers
+  REPO: https://github.com/ucsb-cs156-s25/proj-frontiers-s25-12
   DOKKU: "12"
+
 
 jobs:
   deploy:
