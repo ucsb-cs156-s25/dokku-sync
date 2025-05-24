@@ -1,0 +1,41 @@
+name: 01-sync-courses
+
+# This workflow checks if all required checks have passed before allowing a pull request to be merged.
+# It is triggered on pull request events and uses the GitHub CLI to check the status of checks.
+# The workflow will wait for all other checks to finish before proceeding.
+# If any of the required checks fail, the workflow will exit with an error.
+
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main]
+    paths: [.github/workflows/01-sync-courses.yml]
+  schedule:
+    - cron: '0 1 * * *' # every day at 01:00 UTC.
+   
+env:
+  APP: courses
+  REPO: https://github.com/ucsb-cs156/proj-courses
+  DOKKU: 01
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H csil.cs.ucsb.edu >> ~/.ssh/known_hosts
+        shell: bash
+
+      - name: SSH and run commands
+        run: |
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} git:sync ${{ env.APP }} ${{ env.REPO }} main
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} ps:rebuild ${{ env.APP }} 
+          
