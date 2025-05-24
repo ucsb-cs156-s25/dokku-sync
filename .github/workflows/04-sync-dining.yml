@@ -16,7 +16,7 @@ on:
 
 env:
   APP: dining
-  REPO: https://github.com/ucsb-cs156/proj-dining
+  REPO: https://github.com/ucsb-cs156-s25/proj-dining-s25-04
   DOKKU: "04"
 
 jobs:

@@ -1,4 +1,4 @@
-name: 03-sync-courses
+name: 06-sync-dining
 
 # This workflow checks if all required checks have passed before allowing a pull request to be merged.
 # It is triggered on pull request events and uses the GitHub CLI to check the status of checks.
@@ -10,14 +10,14 @@ on:
   workflow_dispatch:
   push:
     branches: [ main]
-    paths: [.github/workflows/03-sync-courses.yml]
+    paths: [.github/workflows/06-sync-dining.yml]
   schedule:
-    - cron: '0 3 * * *' 
+    - cron: '0 6 * * *' 
 
 env:
-  APP: courses
-  REPO: https://github.com/ucsb-cs156-s25/proj-courses-s25-03
-  DOKKU: "03"
+  APP: dining
+  REPO: https://github.com/ucsb-cs156-s25/proj-dining-s25-06
+  DOKKU: "06"
 
 jobs:
   deploy:
