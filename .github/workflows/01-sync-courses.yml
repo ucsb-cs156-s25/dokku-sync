@@ -17,7 +17,7 @@ on:
 env:
   APP: courses
   REPO: https://github.com/ucsb-cs156/proj-courses
-  DOKKU: 01
+  DOKKU: "01"
 
 jobs:
   deploy:
