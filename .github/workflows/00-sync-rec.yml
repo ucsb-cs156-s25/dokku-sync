@@ -1,4 +1,4 @@
-name: 00 - sync dokku-00 apps
+name: 00-sync-rec
 
 # This workflow checks if all required checks have passed before allowing a pull request to be merged.
 # It is triggered on pull request events and uses the GitHub CLI to check the status of checks.
@@ -8,12 +8,16 @@ name: 00 - sync dokku-00 apps
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    branches: [ main]
+    paths: [.github/workflows/00-sync-rec.yml]
+  schedule:
+    - cron: '45 0 * * *' # every day at 00:45 UTC.
+   
+env:
+  APP: rec
+  REPO: https://github.com/ucsb-cs156/proj-rec
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -31,4 +35,6 @@ jobs:
 
       - name: SSH and run commands
         run: |
-          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu 00 apps:list
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu 00 git:sync ${{ env.APP }} ${{ env.REPO }} main
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu 00 ps:rebuild ${{ env.APP }} 
+          
