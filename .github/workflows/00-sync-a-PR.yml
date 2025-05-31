@@ -1,0 +1,88 @@
+name: 00-sync-a-PR
+
+# This workflow checks if all required checks have passed before allowing a pull request to be merged.
+# It is triggered on pull request events and uses the GitHub CLI to check the status of checks.
+# The workflow will wait for all other checks to finish before proceeding.
+# If any of the required checks fail, the workflow will exit with an error.
+
+on:
+  workflow_dispatch: # Allows manual triggering of the workflow
+    inputs:
+      pr_url:
+        type: string
+        description: URL of a cs156 project repo pull request with a dokku deployment url in the description
+   
+env:
+  GITHUB_TOKEN: ${{ secrets.PAT }} # Store your Personal Access Token in Secrets
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+
+      - name: Get values from PR URL
+        id: get_pr_info
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          PR_URL: ${{ github.event.inputs.pr_url }}
+        run: |
+          rm -rf pr_info.json
+          python <<EOF > pr_info.json
+          import os
+          import github_pr_funcs
+          GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+          pr_url = os.getenv("PR_URL")
+          if not pr_url:
+            raise ValueError("No PR URL provided. Please provide a valid PR URL.")
+          print(github_pr_funcs.get_dokku_command_elements_from_raw_pr_url(GITHUB_TOKEN, pr_url))
+          EOF
+       
+          # Parse the JSON output to extract values
+          echo "APP=$(cat pr_info.json | jq -r '.app')" >> "$GITHUB_OUTPUT"
+          echo "REPO=$(cat pr_info.json | jq -r '.repo')" >> "$GITHUB_OUTPUT"
+          echo "BRANCH=$(cat pr_info.json | jq -r '.branch')" >> "$GITHUB_OUTPUT"
+          echo "DOKKU=$(cat pr_info.json | jq -r '.dokku')" >> "$GITHUB_OUTPUT"
+
+      - name: Dry run of dokku commands
+        env:
+          APP: ${{ steps.get_pr_info.outputs.APP }}
+          REPO: ${{ steps.get_pr_info.outputs.REPO }}
+          BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
+          DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
+        run: |
+          echo "The following commands will be executed:"
+          echo "::notice::ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} git:sync ${{ env.APP }} ${{ env.REPO }} ${{ env.BRANCH }}"
+          echo "::notice::ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} ps:rebuild ${{ env.APP }}"
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H csil.cs.ucsb.edu >> ~/.ssh/known_hosts
+        shell: bash
+
+      - name: SSH and run commands
+        env:
+          APP: ${{ steps.get_pr_info.outputs.APP }}
+          REPO: ${{ steps.get_pr_info.outputs.REPO }}
+          BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
+          DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} git:sync ${{ env.APP }} ${{ env.REPO }} ${{ env.BRANCH }}
+          if [ $? -ne 0 ]; then
+            echo "::error::Dokku git sync failed. Exiting."
+            exit 1
+          fi
+          echo "::notice::dokku git:sync succeeded. Rebuilding app..."
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} ps:rebuild ${{ env.APP }} 
+          if [ $? -ne 0 ]; then
+            echo "::error::dokku psLrebuild failed. Exiting."
+            exit 1
+          fi
+          echo "::notice::PR ${{ github.event.inputs.pr_url }} successfully deployed"
+          echo "::notice::URL: https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu"
+          
