@@ -46,17 +46,7 @@ jobs:
           echo "BRANCH=$(cat pr_info.json | jq -r '.branch')" >> "$GITHUB_OUTPUT"
           echo "DOKKU=$(cat pr_info.json | jq -r '.dokku')" >> "$GITHUB_OUTPUT"
 
-      - name: Dry run of dokku commands
-        env:
-          APP: ${{ steps.get_pr_info.outputs.APP }}
-          REPO: ${{ steps.get_pr_info.outputs.REPO }}
-          BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
-          DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
-        run: |
-          echo "The following commands will be executed:"
-          echo "::notice::ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} git:sync ${{ env.APP }} ${{ env.REPO }} ${{ env.BRANCH }}"
-          echo "::notice::ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} ps:rebuild ${{ env.APP }}"
-
+  
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
@@ -65,25 +55,47 @@ jobs:
           ssh-keyscan -H csil.cs.ucsb.edu >> ~/.ssh/known_hosts
         shell: bash
 
-      - name: SSH and run commands
+      - name: git:sync
         env:
           APP: ${{ steps.get_pr_info.outputs.APP }}
           REPO: ${{ steps.get_pr_info.outputs.REPO }}
           BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
           DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
         run: |
+          echo "::notice:: Executing dokku config:set for SOURCE_REPO..."
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} config:set --no-restart ${{ env.APP }} SOURCE_REPO=${{ env.REPO }}
+          echo "::group:: Executing dokku git:sync"
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} git:sync ${{ env.APP }} ${{ env.REPO }} ${{ env.BRANCH }}
           if [ $? -ne 0 ]; then
             echo "::error::Dokku git sync failed. Exiting."
             exit 1
           fi
-          echo "::notice::dokku git:sync succeeded. Rebuilding app..."
+          echo "::endgroup::"
+          echo "::notice::dokku git:sync succeeded"
+          
+      - name: ps:rebuild
+        env:
+          APP: ${{ steps.get_pr_info.outputs.APP }}
+          REPO: ${{ steps.get_pr_info.outputs.REPO }}
+          BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
+          DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
+        run: |
+          echo "::notice:: Executing dokku ps:rebuild"
+          echo "::group:: Executing dokku ps:rebuild"
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} ps:rebuild ${{ env.APP }} 
+          echo "::endgroup::"
           if [ $? -ne 0 ]; then
             echo "::error::dokku psLrebuild failed. Exiting."
             exit 1
           fi
-          echo "::notice::PR ${{ github.event.inputs.pr_url }} successfully deployed"
-          echo "::notice::Deployed to: [https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu](https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu)"
           
+      - name: notify of success
+        env:
+          APP: ${{ steps.get_pr_info.outputs.APP }}
+          REPO: ${{ steps.get_pr_info.outputs.REPO }}
+          BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
+          DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
+        run: |
+          echo "::notice::PR ${{ github.event.inputs.pr_url }} successfully deployed"
+          echo "::notice::Deployed to: https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu"
+  
