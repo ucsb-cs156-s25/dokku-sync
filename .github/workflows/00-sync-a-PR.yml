@@ -84,5 +84,5 @@ jobs:
             exit 1
           fi
           echo "::notice::PR ${{ github.event.inputs.pr_url }} successfully deployed"
-          echo "::notice::URL: https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu"
+          echo "::notice Deployed to: [https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu](https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu)"
           
