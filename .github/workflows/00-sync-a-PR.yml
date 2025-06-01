@@ -72,6 +72,7 @@ jobs:
           BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
           DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
         run: |
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} config:set --no-restart ${{ env.APP }} SOURCE_REPO=${{ env.REPO }}
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} git:sync ${{ env.APP }} ${{ env.REPO }} ${{ env.BRANCH }}
           if [ $? -ne 0 ]; then
             echo "::error::Dokku git sync failed. Exiting."
@@ -84,5 +85,5 @@ jobs:
             exit 1
           fi
           echo "::notice::PR ${{ github.event.inputs.pr_url }} successfully deployed"
-          echo "::notice Deployed to: [https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu](https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu)"
+          echo "::notice::Deployed to: [https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu](https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu)"
           
