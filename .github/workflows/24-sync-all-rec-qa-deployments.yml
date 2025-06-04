@@ -1,0 +1,45 @@
+name: 24-sync-all-rec-qa-deployments
+
+# This workflow checks if all required checks have passed before allowing a pull request to be merged.
+# It is triggered on pull request events and uses the GitHub CLI to check the status of checks.
+# The workflow will wait for all other checks to finish before proceeding.
+# If any of the required checks fail, the workflow will exit with an error.
+
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main]
+    paths: [.github/workflows/24-sync-all-rec-qa-deployments.yml]
+  schedule:
+    - cron: '0 16 * * *' 
+
+env:
+  APP: rec
+
+jobs:
+  deploy:
+    strategy:
+      matrix:
+        DOKKU: ["13", "14", "15", "16"]
+    runs-on: ubuntu-latest
+    env:
+      DOKKU: ${{ matrix.DOKKU }}
+      REPO: https://github.com/ucsb-cs156-s25/proj-${{env.APP}}-s25-${{ matrix.DOKKU }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H csil.cs.ucsb.edu >> ~/.ssh/known_hosts
+        shell: bash
+
+      - name: SSH and run commands
+        run: |
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} git:sync ${{ env.APP }}-qa ${{ env.REPO }} main
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} ps:rebuild ${{ env.APP }}-qa 
+          
