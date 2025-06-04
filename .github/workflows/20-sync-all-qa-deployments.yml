@@ -46,6 +46,7 @@ jobs:
       - name: SSH and run commands
         run: |
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} config:set --no-restart ${{ env.PROJECT }}-qa SOURCE_REPO=${{ env.REPO }}
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} config:set --no-restart ${{ env.PROJECT }}-qa ADMIN_EMAILS=${{ secrets.ADMIN_EMAILS_QA || 'phtcon@ucsb.edu' }}
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} git:sync ${{ env.PROJECT }}-qa ${{ env.REPO }} main
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} ps:rebuild ${{ env.PROJECT }}-qa 
           
