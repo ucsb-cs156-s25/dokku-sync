@@ -15,7 +15,7 @@ on:
   #   - cron: '0 16 * * *' 
 
 env:
-    PROJECTS: "{ \"01\": \"courses\", \"02\": \"courses\", \"03\": \"courses\", \"04\": \"dining\", \"05\": \"courses\", \"06\": \"dining\", \"07\": \"frontiers\", \"08\": \"dining\", \"09\": \"frontiers\", \"10\": \"rec\", \"11\": \"frontiers\", \"12\": \"frontiers\", \"13\": \"rec\", \"14\": \"rec\", \"15\": \"rec\", \"16\": \"rec\" }"
+    PROJECTS: "{ \"01\": \"courses\", \"02\": \"courses\", \"03\": \"courses\", \"04\": \"dining\", \"05\": \"courses\", \"06\": \"dining\", \"07\": \"frontiers\", \"08\": \"dining\", \"09\": \"frontiers\", \"10\": \"dining\", \"11\": \"frontiers\", \"12\": \"frontiers\", \"13\": \"rec\", \"14\": \"rec\", \"15\": \"rec\", \"16\": \"rec\" }"
 
 jobs:
   deploy:
