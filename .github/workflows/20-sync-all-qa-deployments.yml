@@ -20,6 +20,7 @@ env:
 jobs:
   deploy:
     strategy:
+      fail-fast: false    # If one part of the matrix fails, do not stop the others.   
       matrix:
         TEAM: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16"]
     runs-on: ubuntu-latest
@@ -48,5 +49,6 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} config:set --no-restart ${{ env.PROJECT }}-qa SOURCE_REPO=${{ env.REPO }}
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} config:set --no-restart ${{ env.PROJECT }}-qa ADMIN_EMAILS=${{ secrets.ADMIN_EMAILS_QA || 'phtcon@ucsb.edu' }}
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} git:sync ${{ env.PROJECT }}-qa ${{ env.REPO }} main
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} apps:unlock ${{ env.PROJECT }}-qa 
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{ env.DOKKU }} ps:rebuild ${{ env.PROJECT }}-qa 
           
