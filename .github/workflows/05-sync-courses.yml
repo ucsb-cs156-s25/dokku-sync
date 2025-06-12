@@ -16,7 +16,7 @@ on:
 
 env:
   APP: courses
-  REPO: https://github.com/ucsb-cs156/proj-courses
+  REPO: https://github.com/ucsb-cs156-s25/proj-courses-s25-05
   DOKKU: "05"
 
 jobs:
