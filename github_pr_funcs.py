@@ -128,6 +128,30 @@ def get_dokku_command_elements_from_raw_pr_url(GITHUB_TOKEN, raw_pr_url):
         "repo": repo_url,
         "branch": branch
     })
+    
+def get_repo_and_branch_from_raw_pr_url(GITHUB_TOKEN, raw_pr_url):
+    """
+    Extracts the repo and branch from the raw pull request URL.
+    
+    Args:
+        raw_pr_url (str): The raw URL of the pull request.
+        
+    Returns:
+        str: The dokku command if found, otherwise None.
+    """
+
+    raw_pr_url_components = separate_raw_pr_url(raw_pr_url)    
+    pr_data = get_pr_from_raw_pr_url(GITHUB_TOKEN, raw_pr_url)
+    repo_url = f"https://github.com/{raw_pr_url_components['org']}/{raw_pr_url_components['repo']}"
+    try:
+        branch = pr_data['head']['ref'] 
+    except KeyError:
+        raise ValueError("Could not find branch name for PR with URL: " + raw_pr_url)
+    
+    return json.dumps({
+        "repo": repo_url,
+        "branch": branch
+    })
   
 if __name__ == "__main__":
     with open("GITHUB_TOKEN", "r") as f:
