@@ -45,7 +45,11 @@ jobs:
           echo "BRANCH=$(cat pr_info.json | jq -r '.branch')" >> "$GITHUB_OUTPUT"
           echo "DOKKU=$(cat pr_info.json | jq -r '.dokku')" >> "$GITHUB_OUTPUT"
 
-  
+      - name: Debugging output
+        if: always()
+        run: |
+          cat pr_info.json
+      
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
