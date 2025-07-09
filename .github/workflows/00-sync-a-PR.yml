@@ -1,9 +1,8 @@
 name: 00-sync-a-PR
 
-# This workflow checks if all required checks have passed before allowing a pull request to be merged.
-# It is triggered on pull request events and uses the GitHub CLI to check the status of checks.
-# The workflow will wait for all other checks to finish before proceeding.
-# If any of the required checks fail, the workflow will exit with an error.
+# This workflow allows for manual deployment of a cs156 project repo pull request to a Dokku server.
+# It makes the assumption that the PR is from a ucsb-cs156-s25 project repo, and that the dokku server
+# is referenced in the PR desciption.
 
 on:
   workflow_dispatch: # Allows manual triggering of the workflow
