@@ -112,7 +112,7 @@ def get_dokku_command_elements_from_raw_pr_url(GITHUB_TOKEN, raw_pr_url):
     
     if not dokku_app:
         print(f"Dokku app name: {dokku_app['appname']}, Dokku number: {dokku_app['dokku_num']}")
-    if not dokku_app['dokku_num'] == repo_name_components['team_num']:
+    if dokku_app['dokku-num']!="00" and  dokku_app['dokku_num'] != repo_name_components['team_num']:
         raise ValueError(f"Dokku number {dokku_app['dokku_num']} does not match team number {repo_name_components['team_num']} in repo name {raw_pr_url_components['repo']}")
     appname = dokku_app['appname']
     dokku_num = dokku_app['dokku_num']
