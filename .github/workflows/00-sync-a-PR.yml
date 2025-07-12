@@ -21,7 +21,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-
       - name: Get values from PR URL
         id: get_pr_info
         env:
@@ -44,6 +43,7 @@ jobs:
           echo "REPO=$(cat pr_info.json | jq -r '.repo')" >> "$GITHUB_OUTPUT"
           echo "BRANCH=$(cat pr_info.json | jq -r '.branch')" >> "$GITHUB_OUTPUT"
           echo "DOKKU=$(cat pr_info.json | jq -r '.dokku')" >> "$GITHUB_OUTPUT"
+          echo "APP_URL=https://$(cat pr_info.json | jq -r '.app').dokku-$(cat pr_info.json | jq -r '.dokku').cs.ucsb.edu"
 
       - name: Debugging output
         if: always()
@@ -64,6 +64,7 @@ jobs:
           REPO: ${{ steps.get_pr_info.outputs.REPO }}
           BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
           DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
+          APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
         run: |
           echo "::notice:: Executing dokku config:set for SOURCE_REPO..."
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} config:set --no-restart ${{ env.APP }} SOURCE_REPO=${{ env.REPO }}
@@ -75,6 +76,23 @@ jobs:
           fi
           echo "::endgroup::"
           echo "::notice::dokku git:sync succeeded"
+
+      - name: Create GitHub deployment
+        uses: chrnorm/deployment-action@v2
+        id: deployment # Assign an ID to reference outputs later
+        env:
+          APP: ${{ steps.get_pr_info.outputs.APP }}
+          REPO: ${{ steps.get_pr_info.outputs.REPO }}
+          BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
+          DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
+          APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
+        with:
+          token: ${{ github.token }}
+          environment: staging # Or staging, development, etc.
+          description: "Deploying to ${{env.APP_URL}}"
+          # Optional: Provide a URL to your deployed application
+          environment_url: ${{env.APP_URL}}
+
           
       - name: ps:rebuild
         env:
@@ -87,18 +105,48 @@ jobs:
           echo "::group:: Executing dokku ps:rebuild"
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu ${{env.DOKKU}} ps:rebuild ${{ env.APP }} 
           echo "::endgroup::"
-          if [ $? -ne 0 ]; then
-            echo "::error::dokku psLrebuild failed. Exiting."
-            exit 1
-          fi
+          # if [ $? -ne 0 ]; then
+          #   echo "::error::dokku ps:rebuild failed. Exiting."
+          #   exit 1
+          # fi
           
       - name: notify of success
+        if: success()
         env:
           APP: ${{ steps.get_pr_info.outputs.APP }}
           REPO: ${{ steps.get_pr_info.outputs.REPO }}
           BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
           DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
+          APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
         run: |
           echo "::notice::PR ${{ github.event.inputs.pr_url }} successfully deployed"
-          echo "::notice::Deployed to: https://${{env.APP}}.dokku-${{env.DOKKU}}.cs.ucsb.edu"
+          echo "::notice::Deployed to: ${{env.APP_URL}}"
+
+
+      - name: Update deployment status (Success)
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        env:
+          APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
+        with:
+          token: ${{ github.token }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: success
+          description: Deployment completed successfully!
+          # Optional: Link back to the deployed application
+          environment-url: ${{env.APP_URL}}
+          log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} # Link to workflow run logs
+
+      - name: Update deployment status (Failure)
+        if: failure()
+        uses: chrnorm/deployment-status@v2
+        env:
+          APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
+        with:
+          token: ${{ github.token }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: failure
+          description: "Deployment to ${{env.APP_URL}} failed!"
+          log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} # Link to workflow run logs
+
   
