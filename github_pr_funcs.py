@@ -124,7 +124,10 @@ def get_dokku_command_elements_from_raw_pr_url(GITHUB_TOKEN, raw_pr_url):
         "app": appname,
         "dokku": dokku_num,
         "repo": repo_url,
-        "branch": branch
+        "branch": branch,
+        "owner": raw_pr_url_components['org'],
+        "repo_name": raw_pr_url_components['repo'],
+        "pr_url": raw_pr_url,
     })
     
 def get_repo_and_branch_from_raw_pr_url(GITHUB_TOKEN, raw_pr_url):

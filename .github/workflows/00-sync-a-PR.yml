@@ -44,6 +44,8 @@ jobs:
           echo "BRANCH=$(cat pr_info.json | jq -r '.branch')" >> "$GITHUB_OUTPUT"
           echo "DOKKU=$(cat pr_info.json | jq -r '.dokku')" >> "$GITHUB_OUTPUT"
           echo "APP_URL=https://$(cat pr_info.json | jq -r '.app').dokku-$(cat pr_info.json | jq -r '.dokku').cs.ucsb.edu"
+          echo "OWNER=$(cat pr_info.json | jq -r '.owner')" >> "$GITHUB_OUTPUT"
+          echo "REPO_NAME=$(cat pr_info.json | jq -r '.repo_name')" >> "$GITHUB_OUTPUT"
 
       - name: Debugging output
         if: always()
@@ -86,12 +88,17 @@ jobs:
           BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
           DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
           APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
+          OWNER: ${{ steps.get_pr_info.outputs.OWNER }}
+          REPO_NAME: ${{ steps.get_pr_info.outputs.REPO_NAME }}
         with:
           token: ${{ github.token }}
           environment: staging # Or staging, development, etc.
           description: "Deploying to ${{env.APP_URL}}"
           # Optional: Provide a URL to your deployed application
-          environment_url: ${{env.APP_URL}}
+          environment-url: ${{env.APP_URL}}
+          owner: ${{ steps.get_pr_info.outputs.OWNER }}
+          repo: ${{ steps.get_pr_info.outputs.REPO_NAME }}
+          ref: ${{ steps.get_pr_info.outputs.BRANCH }}
 
           
       - name: ps:rebuild
@@ -128,11 +135,12 @@ jobs:
         uses: chrnorm/deployment-status@v2
         env:
           APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
+          PR_URL: ${{ github.event.inputs.pr_url }}
         with:
           token: ${{ github.token }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           state: success
-          description: Deployment completed successfully!
+          description: "PR ${{ env.PR_URL}} deployed to ${{env.APP_URL}}!"
           # Optional: Link back to the deployed application
           environment-url: ${{env.APP_URL}}
           log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} # Link to workflow run logs
@@ -146,7 +154,7 @@ jobs:
           token: ${{ github.token }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           state: failure
-          description: "Deployment to ${{env.APP_URL}} failed!"
+          description: "Deployment to ${{env.APP_URL}} for PR ${{env.PR_URL}} failed!"
           log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} # Link to workflow run logs
 
   
