@@ -43,7 +43,7 @@ jobs:
           echo "REPO=$(cat pr_info.json | jq -r '.repo')" >> "$GITHUB_OUTPUT"
           echo "BRANCH=$(cat pr_info.json | jq -r '.branch')" >> "$GITHUB_OUTPUT"
           echo "DOKKU=$(cat pr_info.json | jq -r '.dokku')" >> "$GITHUB_OUTPUT"
-          echo "APP_URL=https://$(cat pr_info.json | jq -r '.app').dokku-$(cat pr_info.json | jq -r '.dokku').cs.ucsb.edu"
+          echo "APP_URL=https://$(cat pr_info.json | jq -r '.app').dokku-$(cat pr_info.json | jq -r '.dokku').cs.ucsb.edu" >> "$GITHUB_OUTPUT"
           echo "OWNER=$(cat pr_info.json | jq -r '.owner')" >> "$GITHUB_OUTPUT"
           echo "REPO_NAME=$(cat pr_info.json | jq -r '.repo_name')" >> "$GITHUB_OUTPUT"
 
@@ -134,13 +134,21 @@ jobs:
         if: success()
         uses: chrnorm/deployment-status@v2
         env:
+          APP: ${{ steps.get_pr_info.outputs.APP }}
+          REPO: ${{ steps.get_pr_info.outputs.REPO }}
+          BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
+          DOKKU: ${{ steps.get_pr_info.outputs.DOKKU }}
           APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
+          OWNER: ${{ steps.get_pr_info.outputs.OWNER }}
+          REPO_NAME: ${{ steps.get_pr_info.outputs.REPO_NAME }}
           PR_URL: ${{ github.event.inputs.pr_url }}
         with:
           token: ${{ secrets.PAT }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           environment-url: ${{ steps.deployment.outputs.environment_url }}
           state: success
+          owner: ${{ steps.get_pr_info.outputs.OWNER }}
+          repo: ${{ steps.get_pr_info.outputs.REPO_NAME }}          
           description: "PR ${{ env.PR_URL}} deployed to ${{env.APP_URL}}!"
           # Optional: Link back to the deployed application
           log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} # Link to workflow run logs
@@ -151,9 +159,13 @@ jobs:
         env:
           APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
           PR_URL: ${{ github.event.inputs.pr_url }}
+          OWNER: ${{ steps.get_pr_info.outputs.OWNER }}
+          REPO_NAME: ${{ steps.get_pr_info.outputs.REPO_NAME }}
         with:
           token: ${{ secrets.PAT }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          owner: ${{ steps.get_pr_info.outputs.OWNER }}
+          repo: ${{ steps.get_pr_info.outputs.REPO_NAME }}          
           state: failure
           description: "Deployment to ${{env.APP_URL}} for PR ${{env.PR_URL}} failed!"
           log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} # Link to workflow run logs
