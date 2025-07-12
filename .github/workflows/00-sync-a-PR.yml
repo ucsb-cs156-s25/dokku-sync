@@ -91,8 +91,8 @@ jobs:
           OWNER: ${{ steps.get_pr_info.outputs.OWNER }}
           REPO_NAME: ${{ steps.get_pr_info.outputs.REPO_NAME }}
         with:
-          token: ${{ github.token }}
-          environment: staging # Or staging, development, etc.
+          token: ${{ secrets.PAT }}
+          environment: "${{env.APP}} on dokku-${{env.DOKKU}}" # Or staging, development, etc.
           description: "Deploying to ${{env.APP_URL}}"
           # Optional: Provide a URL to your deployed application
           environment-url: ${{env.APP_URL}}
@@ -137,12 +137,12 @@ jobs:
           APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
           PR_URL: ${{ github.event.inputs.pr_url }}
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.PAT }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          environment-url: ${{ steps.deployment.outputs.environment_url }}
           state: success
           description: "PR ${{ env.PR_URL}} deployed to ${{env.APP_URL}}!"
           # Optional: Link back to the deployed application
-          environment-url: ${{env.APP_URL}}
           log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} # Link to workflow run logs
 
       - name: Update deployment status (Failure)
@@ -150,8 +150,9 @@ jobs:
         uses: chrnorm/deployment-status@v2
         env:
           APP_URL: ${{ steps.get_pr_info.outputs.APP_URL }}
+          PR_URL: ${{ github.event.inputs.pr_url }}
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.PAT }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           state: failure
           description: "Deployment to ${{env.APP_URL}} for PR ${{env.PR_URL}} failed!"
