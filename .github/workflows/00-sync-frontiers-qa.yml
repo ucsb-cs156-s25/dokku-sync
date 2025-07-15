@@ -8,11 +8,11 @@ name: 00-sync-frontiers-qa
 
 on:
   workflow_dispatch:
-     inputs:
-      pr_url:
-        type: string
-        description: URL of a proj-frontiers PR
-
+  push:
+    branches: [ main]
+    paths: [.github/workflows/00-sync-frontiers.yml]
+  schedule:
+    - cron: '0 */6 * * *' # every six hours
    
 env:
   APP: frontiers-qa
@@ -25,32 +25,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Get values from PR URL
-        id: get_pr_info
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-          PR_URL: ${{ github.event.inputs.pr_url }}
-        run: |
-          rm -rf pr_info.json
-          python <<EOF > pr_info.json
-          import os
-          import github_pr_funcs
-          GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-          pr_url = os.getenv("PR_URL")
-          if not pr_url:
-            raise ValueError("No PR URL provided. Please provide a valid PR URL.")
-          print(github_pr_funcs.get_repo_and_branch_from_raw_pr_url(GITHUB_TOKEN, pr_url))
-          EOF
-       
-          # Parse the JSON output to extract values
-          echo "BRANCH=$(cat pr_info.json | jq -r '.branch')" >> "$GITHUB_OUTPUT"
-
-          # if REPO is not equal to ucsb-cs156/proj-frontiers, then exit with an error
-          if [[ "$(cat pr_info.json | jq -r '.repo')" != "https://github.com/ucsb-cs156/proj-frontiers" ]]; then
-            echo "Error: The PR specified is not from ucsb-cs156/proj-frontiers. Please provide a valid PR URL"
-            exit 1
-          fi
-
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
@@ -60,9 +34,7 @@ jobs:
         shell: bash
 
       - name: SSH and run commands
-        env:
-            BRANCH: ${{ steps.get_pr_info.outputs.BRANCH }}
         run: |
-          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu 00 git:sync ${{ env.APP }} ${{ env.REPO }} ${{ env.BRANCH }}
+          ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu 00 git:sync ${{ env.APP }} ${{ env.REPO }} main
           ssh -i ~/.ssh/id_ed25519 pconrad@csil.cs.ucsb.edu 00 ps:rebuild ${{ env.APP }} 
           
