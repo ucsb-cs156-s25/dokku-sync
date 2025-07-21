@@ -11,8 +11,8 @@ on:
   push:
     branches: [ main]
     paths: [.github/workflows/12-sync-frontiers.yml]
-  schedule:
-    - cron: '0 12 * * *' 
+  # schedule:
+  #   - cron: '0 12 * * *' 
 
 env:
   APP: frontiers
