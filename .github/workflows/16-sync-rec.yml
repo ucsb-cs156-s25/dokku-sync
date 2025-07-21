@@ -11,8 +11,8 @@ on:
   push:
     branches: [ main]
     paths: [.github/workflows/16-sync-rec.yml]
-  schedule:
-    - cron: '0 16 * * *' 
+  # schedule:
+  #   - cron: '0 16 * * *' 
 
 env:
   APP: rec
