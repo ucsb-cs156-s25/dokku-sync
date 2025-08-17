@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ main]
-    paths: [.github/workflows/00-sync-frontiers.yml]
+    paths: [.github/workflows/00-sync-frontiers-qa.yml]
   schedule:
     - cron: '0 */6 * * *' # every six hours
    
